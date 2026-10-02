@@ -1,0 +1,9 @@
+# CPU cluster for subscriptions without GPU access (e.g. Azure Free Trial).
+# Standard_E16s_v3 = 16 vCPUs, 128 GB RAM. Scales to zero when idle.
+$schema: https://azuremlschemas.azureedge.net/latest/amlCompute.schema.json
+name: cpu-e16
+type: amlcompute
+size: Standard_E16s_v3
+min_instances: 0
+max_instances: 1
+idle_time_before_scale_down: 600

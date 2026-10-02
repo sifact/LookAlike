@@ -1,0 +1,13 @@
+data/
+artifacts/
+runs/
+.venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+azure_outputs/
+frontend/node_modules/
+frontend/dist/
+.claude/
+.pytest_cache/

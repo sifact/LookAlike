@@ -1,0 +1,11 @@
+data/
+artifacts/
+runs/
+.venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+.pytest_cache/
+azure_outputs/
+frontend/

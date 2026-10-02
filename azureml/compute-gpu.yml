@@ -1,0 +1,12 @@
+# GPU cluster that scales to zero when idle, so you pay only while a job runs.
+# Standard_NC4as_T4_v3 = 4 vCPUs + 1x NVIDIA T4 (16 GB). Needs "NCASv3_T4" quota.
+$schema: https://azuremlschemas.azureedge.net/latest/amlCompute.schema.json
+name: gpu-t4
+type: amlcompute
+size: Standard_NC4as_T4_v3
+min_instances: 0
+max_instances: 1
+idle_time_before_scale_down: 600
+# Spot pricing (much cheaper, can be preempted). Needs low-priority vCPU quota.
+# Remove this line to use dedicated (regular) quota instead.
+tier: low_priority

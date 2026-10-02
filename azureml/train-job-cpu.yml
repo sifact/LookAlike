@@ -1,0 +1,28 @@
+# Same training as train-job.yml (same data sample, seeds, hyperparameters) on CPU.
+# Slower than a GPU but works on subscriptions without GPU quota.
+# Off-the-shelf baselines were already measured locally, so only the trained model is evaluated here.
+$schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
+type: command
+experiment_name: visual-search
+display_name: train-interactions-cpu
+description: Contrastive fine-tune of DINOv2 ViT-S on Stanford Online Products (same-product positives), CPU.
+
+code: ..
+
+environment:
+  image: docker.io/library/python:3.11-slim
+
+compute: azureml:cpu-e16
+
+environment_variables:
+  VS_DATA: /tmp/vs-data
+  HF_HUB_DISABLE_PROGRESS_BARS: "1"
+
+command: >-
+  pip install -q torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu &&
+  pip install -q -e ".[azure]" &&
+  python -c "import torch; print('torch', torch.__version__, 'threads', torch.get_num_threads())" &&
+  visual-search data --per-category-train 300 --per-category-test 300 --max-queries 2000 --seed 0 &&
+  visual-search train --mode interactions --epochs 3 --batch-size 64 --lr 2e-5 --temperature 0.05 --proj-dim 256 --workers 4 --seed 0 &&
+  visual-search evaluate artifacts/models/interactions.pt &&
+  mkdir -p outputs && cp -r artifacts/models runs outputs/

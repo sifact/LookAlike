@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visual Search</title>
+<style>
+  :root { --bg:#fafaf9; --fg:#1c1917; --muted:#78716c; --line:#e7e5e4; --accent:#dc2626; --card:#fff; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#1c1917; --fg:#f5f5f4; --muted:#a8a29e; --line:#44403c; --accent:#f87171; --card:#292524; } }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.5 system-ui, sans-serif; background:var(--bg); color:var(--fg); }
+  main { max-width:1100px; margin:0 auto; padding:24px 16px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  p.hint { color:var(--muted); margin:0 0 16px; }
+  .layout { display:grid; grid-template-columns:minmax(0,340px) minmax(0,1fr); gap:24px; }
+  @media (max-width:760px) { .layout { grid-template-columns:minmax(0,1fr); } }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; }
+  #wrap { position:relative; user-select:none; touch-action:none; }
+  #query { width:100%; display:block; border-radius:6px; cursor:crosshair; }
+  #sel { position:absolute; border:2px solid var(--accent); background:rgb(220 38 38 / .12); display:none; pointer-events:none; }
+  .row { display:flex; gap:8px; align-items:center; margin-top:10px; flex-wrap:wrap; }
+  button { font:inherit; padding:6px 12px; border-radius:6px; border:1px solid var(--line); background:var(--bg); color:var(--fg); cursor:pointer; }
+  button.primary { background:var(--fg); color:var(--bg); border-color:var(--fg); }
+  button:disabled { opacity:.5; cursor:default; }
+  #status { color:var(--muted); font-size:13px; min-height:20px; margin-top:8px; }
+  #results { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+  .hit { background:var(--card); border:1px solid var(--line); border-radius:8px; overflow:hidden; font-size:12px; }
+  .hit img { width:100%; aspect-ratio:1; object-fit:cover; display:block; cursor:pointer; }
+  .hit div { padding:6px 8px; color:var(--muted); }
+  .hit b { color:var(--fg); font-weight:600; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Visual search</h1>
+  <p class="hint">Upload an image, optionally drag a box to search a crop, or click any result to search from it.</p>
+  <div class="layout">
+    <div class="panel">
+      <input type="file" id="file" accept="image/*">
+      <div id="wrap" style="margin-top:10px"><img id="query" alt=""><div id="sel"></div></div>
+      <div class="row">
+        <label>k <select id="k"><option>10</option><option>20</option><option>40</option></select></label>
+        <button class="primary" id="go" disabled>Search</button>
+        <button id="clear" disabled>Clear crop</button>
+        <button id="add" disabled title="Index this image so others can find it">Add to index</button>
+      </div>
+      <div id="status"></div>
+    </div>
+    <div id="results"></div>
+  </div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+let blob = null, box = null, drag = null;
+
+function setImage(b) {
+  blob = b; box = null; $('sel').style.display = 'none';
+  $('query').src = URL.createObjectURL(b);
+  ['go','clear','add'].forEach(id => $(id).disabled = false);
+  search();
+}
+$('file').onchange = e => e.target.files[0] && setImage(e.target.files[0]);
+
+const img = $('query');
+function frac(e) {
+  const r = img.getBoundingClientRect();
+  return [Math.min(Math.max((e.clientX - r.left) / r.width, 0), 1), Math.min(Math.max((e.clientY - r.top) / r.height, 0), 1)];
+}
+img.addEventListener('pointerdown', e => { if (!blob) return; e.preventDefault(); drag = frac(e); img.setPointerCapture(e.pointerId); });
+img.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const [x, y] = frac(e), s = $('sel').style;
+  box = [Math.min(drag[0], x), Math.min(drag[1], y), Math.max(drag[0], x), Math.max(drag[1], y)];
+  Object.assign(s, { display:'block', left: box[0]*100+'%', top: box[1]*100+'%', width:(box[2]-box[0])*100+'%', height:(box[3]-box[1])*100+'%' });
+});
+img.addEventListener('pointerup', () => {
+  drag = null;
+  if (box && (box[2]-box[0] < 0.05 || box[3]-box[1] < 0.05)) { box = null; $('sel').style.display = 'none'; }
+  search();
+});
+img.ondragstart = () => false;
+$('clear').onclick = () => { box = null; $('sel').style.display = 'none'; search(); };
+
+async function search() {
+  if (!blob) return;
+  const fd = new FormData();
+  fd.append('file', blob); fd.append('k', $('k').value);
+  if (box) fd.append('box', box.map(v => v.toFixed(4)).join(','));
+  $('status').textContent = 'Searching...';
+  const r = await fetch('/search', { method:'POST', body:fd });
+  const j = await r.json();
+  if (!r.ok) { $('status').textContent = j.detail || 'Error'; return; }
+  const t = j.timings_ms;
+  $('status').textContent = `${j.results.length} results${box ? ' for crop' : ''} · embed ${t.embed} ms · ANN ${t.ann} ms · re-rank ${t.rerank} ms`;
+  $('results').innerHTML = '';
+  for (const h of j.results) {
+    const d = document.createElement('div'); d.className = 'hit';
+    d.innerHTML = `<img loading="lazy" src="${h.url}" alt=""><div><b>${h.score.toFixed(3)}</b> · ${h.category}<br>item ${h.item_id}</div>`;
+    d.querySelector('img').onclick = async () => setImage(await (await fetch(h.url)).blob());
+    $('results').appendChild(d);
+  }
+}
+$('k').onchange = search;
+$('go').onclick = search;
+$('add').onclick = async () => {
+  const fd = new FormData(); fd.append('file', blob);
+  const r = await fetch('/images', { method:'POST', body:fd });
+  const j = await r.json();
+  $('status').textContent = r.ok ? `Indexed as image ${j.image_id}` : (j.detail || 'Error');
+};
+</script>
+</body>
+</html>
