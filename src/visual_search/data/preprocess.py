@@ -6,7 +6,7 @@ from typing import BinaryIO
 from PIL import Image
 from torchvision import transforms as T
 
-from .config import IMG_SIZE
+from ..config import IMG_SIZE
 
 MEAN = (0.485, 0.456, 0.406)
 STD = (0.229, 0.224, 0.225)

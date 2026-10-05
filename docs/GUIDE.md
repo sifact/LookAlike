@@ -25,7 +25,7 @@ The project has three phases (the three lanes in [flowchart.excalidraw](flowchar
 
 ---
 
-## Chapter 1: The data ([data.py](../src/visual_search/data.py))
+## Chapter 1: The data ([data.py](../src/visual_search/data/catalog.py))
 
 - **Dataset:** Stanford Online Products, eBay photos of 22k products in 12 categories
   (bicycle, mug, lamp, …), with several photos per product.
@@ -44,7 +44,7 @@ category and role.
 
 ---
 
-## Chapter 2: Preparing images ([preprocess.py](../src/visual_search/preprocess.py))
+## Chapter 2: Preparing images ([preprocess.py](../src/visual_search/data/preprocess.py))
 
 Models need consistent input. Every image is:
 
@@ -62,7 +62,7 @@ Two **augmentation** recipes are used only in training:
 
 ---
 
-## Chapter 3: The model ([model.py](../src/visual_search/model.py))
+## Chapter 3: The model ([model.py](../src/visual_search/modeling/embedder.py))
 
 `Embedder` has three steps:
 
@@ -76,7 +76,7 @@ Two **augmentation** recipes are used only in training:
 
 ---
 
-## Chapter 4: Training ([train.py](../src/visual_search/train.py))
+## Chapter 4: Training ([training/](../src/visual_search/training/trainer.py))
 
 This is the most important idea in the project: **contrastive learning**.
 
@@ -97,7 +97,7 @@ Where do positives come from? That's the book's key tradeoff, and we test all of
 
 ---
 
-## Chapter 5: Embedding the catalog ([embed.py](../src/visual_search/embed.py))
+## Chapter 5: Embedding the catalog ([embed.py](../src/visual_search/modeling/embed.py))
 
 - `embed_paths()` runs images through the model in batches on the Mac GPU (MPS).
 - `catalog_embeddings()` caches the results in `artifacts/embeddings/`, so evaluating
@@ -106,7 +106,7 @@ Where do positives come from? That's the book's key tradeoff, and we test all of
 
 ---
 
-## Chapter 6: Fast search ([index.py](../src/visual_search/index.py))
+## Chapter 6: Fast search ([index.py](../src/visual_search/retrieval/index.py))
 
 Comparing a query with every image doesn't scale to billions of images, so we use FAISS
 with three options:
@@ -117,12 +117,12 @@ with three options:
 | `hnsw` | walks a graph of neighbors | 99.5% of the exact results, **8× faster** |
 | `ivfpq` | clusters the vectors and compresses them | **15× smaller**, but only 68% of the exact results |
 
-[_faiss.py](../src/visual_search/_faiss.py) exists only to stop torch and faiss from
+[_faiss.py](../src/visual_search/retrieval/_faiss.py) exists only to stop torch and faiss from
 crashing each other on macOS.
 
 ---
 
-## Chapter 7: Re-ranking ([rerank.py](../src/visual_search/rerank.py))
+## Chapter 7: Re-ranking ([rerank.py](../src/visual_search/retrieval/rerank.py))
 
 Raw nearest neighbors aren't ready to show users. `rerank()`:
 
@@ -134,7 +134,7 @@ We fetch about 3× more candidates than needed, so after filtering there are sti
 
 ---
 
-## Chapter 8: Measuring quality ([metrics.py](../src/visual_search/metrics.py), [evaluate.py](../src/visual_search/evaluate.py))
+## Chapter 8: Measuring quality ([metrics.py](../src/visual_search/evaluation/metrics.py), [evaluate.py](../src/visual_search/evaluation/scoring.py))
 
 The main metric is **nDCG@10**: "how good is the top 10, compared with the best possible
 top 10?"
@@ -167,7 +167,7 @@ than off-the-shelf DINOv2. A fix would be to add category-level pairs to trainin
 
 ---
 
-## Chapter 9: Serving ([service.py](../src/visual_search/service.py), [frontend/](../frontend/src/App.tsx))
+## Chapter 9: Serving ([service.py](../src/visual_search/serving/engine.py), [frontend/](../frontend/src/App.tsx))
 
 A FastAPI app ties everything together:
 

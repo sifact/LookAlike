@@ -23,7 +23,7 @@ import pyarrow.parquet as pq
 from huggingface_hub import HfApi, hf_hub_url
 from tqdm import tqdm
 
-from .config import CATALOG, HF_REPO, IMAGES, RAW
+from ..config import CATALOG, HF_REPO, IMAGES, RAW
 
 CHUNK = 8 * 2**20
 

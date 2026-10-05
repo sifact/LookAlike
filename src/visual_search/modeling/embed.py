@@ -8,9 +8,9 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
-from .config import EMBEDDINGS, IMAGES, device
-from .model import Embedder, load_embedder, model_tag
-from .preprocess import eval_transform, load_rgb
+from ..config import EMBEDDINGS, IMAGES, device
+from .embedder import Embedder, load_embedder, model_tag
+from ..data.preprocess import eval_transform, load_rgb
 
 
 class _Paths(Dataset):

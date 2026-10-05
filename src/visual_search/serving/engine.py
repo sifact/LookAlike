@@ -1,32 +1,22 @@
-"""Serving: prediction pipeline (embed -> ANN -> re-rank) and indexing pipeline (add new images).
+"""Search engine: the prediction pipeline (embed -> ANN -> re-rank) and the indexing
+pipeline (add new images). No HTTP here; see api.py."""
 
-Run with `visual-search serve --index artifacts/indexes/<name>`.
-"""
-
-import io
 import json
-import os
 import threading
 import time
 from pathlib import Path
 
 import numpy as np
 import torch
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
 
-from .config import BLOCKED_IDS, IMAGES, ROOT, device
-from .data import load_catalog
-from .index import VectorIndex
-from .model import load_embedder
-from .preprocess import crop, eval_transform, load_rgb
-from .rerank import Candidate, rerank
+from ..config import BLOCKED_IDS, IMAGES, device
+from ..data import load_catalog
+from ..data.preprocess import crop, eval_transform
+from ..modeling import load_embedder
+from ..retrieval import Candidate, VectorIndex, rerank
 
 UPLOADS = IMAGES / "uploads"
 UPLOADS_LOG = UPLOADS / "catalog.jsonl"
-STATIC = Path(__file__).parent / "static"
-FRONTEND_DIST = ROOT / "frontend" / "dist"  # React app (cd frontend && npm run build)
 
 
 class SearchEngine:
@@ -88,67 +78,3 @@ class SearchEngine:
         r = self.catalog.get(c.image_id, {})
         return {"image_id": c.image_id, "score": round(c.score, 4), "item_id": r.get("item_id"),
                 "category": r.get("category"), "url": f"/images/{c.image_id}"}
-
-
-def _parse_box(box: str | None):
-    if not box:
-        return None
-    try:
-        vals = tuple(float(x) for x in box.split(","))
-    except ValueError:
-        raise HTTPException(422, "box must be 'x0,y0,x1,y1'")
-    if len(vals) != 4:
-        raise HTTPException(422, "box must be 'x0,y0,x1,y1'")
-    return vals
-
-
-async def _read_image(file: UploadFile):
-    try:
-        return load_rgb(io.BytesIO(await file.read()))
-    except Exception:
-        raise HTTPException(415, "could not decode image")
-
-
-def create_app(index_dir: Path | None = None) -> FastAPI:
-    index_dir = Path(index_dir or os.environ["VS_INDEX"])
-    engine = SearchEngine(index_dir)
-    app = FastAPI(title="Visual search")
-    app.state.engine = engine
-
-    @app.get("/health")
-    def health():
-        return {"status": "ok", "model": engine.meta["model"], "index": engine.index.kind,
-                "images": len(engine.index), "device": str(engine.dev)}
-
-    @app.post("/search")
-    async def search(file: UploadFile = File(...), k: int = Form(10), box: str | None = Form(None)):
-        if not 1 <= k <= 100:
-            raise HTTPException(422, "k must be between 1 and 100")
-        img = await _read_image(file)
-        try:
-            return engine.search(img, k, _parse_box(box))
-        except ValueError as e:
-            raise HTTPException(422, str(e))
-
-    @app.post("/images")
-    async def add_image(file: UploadFile = File(...), item_id: str | None = Form(None),
-                        category: str | None = Form(None)):
-        return engine.add(await _read_image(file), item_id, category)
-
-    @app.get("/images/{image_id}")
-    def get_image(image_id: int):
-        row = engine.catalog.get(image_id)
-        if row is None or image_id in engine.blocked:
-            raise HTTPException(404, "image not found")
-        return FileResponse(IMAGES / row["path"])
-
-    # UI: the built React app if present, else the dependency-free fallback page.
-    # Mounted last so the API routes above take precedence.
-    if (FRONTEND_DIST / "index.html").exists():
-        app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="ui")
-    else:
-        @app.get("/", response_class=HTMLResponse)
-        def home():
-            return (STATIC / "index.html").read_text()
-
-    return app

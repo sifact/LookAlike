@@ -1,0 +1,60 @@
+# Paste into Azure Portal: AKS cluster -> Kubernetes resources -> Workloads -> Create -> Apply a YAML.
+# Replace <REGISTRY> with your Azure Container Registry name (e.g. visualsearchacr).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: visual-search
+  labels:
+    app: visual-search
+spec:
+  # One replica: "Add to index" writes to the pod's own disk, so replicas would disagree
+  # (and uploads are lost when the pod restarts).
+  replicas: 1
+  selector:
+    matchLabels:
+      app: visual-search
+  template:
+    metadata:
+      labels:
+        app: visual-search
+    spec:
+      containers:
+        - name: api
+          image: <REGISTRY>.azurecr.io/visual-search:v1
+          ports:
+            - containerPort: 8000
+          env:
+            - name: OMP_NUM_THREADS
+              value: "2"
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1500Mi
+            limits:
+              memory: 3Gi
+          readinessProbe: # receive traffic only once the model and index are loaded
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe: # restart the container if it stops responding
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: visual-search
+spec:
+  # Internal only: the public HTTPS entry point is the ingress (deploy/k8s/https/).
+  type: ClusterIP
+  selector:
+    app: visual-search
+  ports:
+    - port: 80
+      targetPort: 8000

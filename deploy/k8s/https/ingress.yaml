@@ -1,0 +1,26 @@
+# HTTPS entry point: https://visual-search-sifat.eastus2.cloudapp.azure.com -> visual-search service.
+# cert-manager sees the annotation, gets a Let's Encrypt certificate and stores it in the TLS secret.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: visual-search
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m" # default 1m would reject larger photo uploads
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - visual-search-sifat.eastus2.cloudapp.azure.com
+      secretName: visual-search-tls
+  rules:
+    - host: visual-search-sifat.eastus2.cloudapp.azure.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: visual-search
+                port:
+                  number: 80

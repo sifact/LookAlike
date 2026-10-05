@@ -21,18 +21,39 @@ query image (+crop)─>│ preprocess -> embedder -> ANN top 3k+5 -> re-rank -> 
                      └──────────────────────────────────────────────────────────────────────┘
 ```
 
-| Module | Role |
-|---|---|
-| `data.py` | Downloads Stanford Online Products, samples products per category, and assigns query/gallery roles on held-out products |
-| `preprocess.py` | Resize, scale, z-score, force RGB, crop; SimCLR and light augmentations |
-| `model.py` | timm backbone + linear projection, L2-normalized embeddings |
-| `train.py` | InfoNCE with in-batch negatives; `selfsup` or `interactions` positives, with optional click noise |
-| `embed.py` | Batch embedding, cached per model in `artifacts/embeddings/` |
-| `index.py` | FAISS `flat` (exact), `hnsw`, `ivfpq`; add, save and load |
-| `rerank.py` | Drops blocked ids, duplicates of the query and near-duplicate results |
-| `metrics.py`, `evaluate.py` | nDCG, mAP, MRR, P@k, R@k, hit@1; per-category nDCG; exact-vs-ANN benchmark |
-| `service.py` | FastAPI `/search`, `/images`, `/health`; serves the web UI |
-| `frontend/` | React + Vite + shadcn/ui web UI (see below) |
+### Code layout
+
+```
+src/visual_search/
+├── cli.py              command line: data, train, evaluate, index, serve
+├── config.py           paths, device, constants
+├── tracking.py         optional MLflow logging (active in Azure ML jobs)
+├── data/               dataset → catalog, image preprocessing
+│   ├── catalog.py
+│   └── preprocess.py
+├── modeling/           the embedding model
+│   ├── embedder.py
+│   ├── embed.py        (see embed.md)
+│   └── embed.md
+├── training/           contrastive fine-tuning
+│   ├── pairs.py        training pairs: selfsup / interactions (+ click noise)
+│   ├── loss.py         InfoNCE
+│   └── trainer.py      training loop
+├── retrieval/          nearest-neighbor search
+│   ├── index.py        FAISS flat / hnsw / ivfpq
+│   ├── rerank.py       blocked ids, near-duplicates
+│   └── _faiss.py       safe torch + faiss import on macOS
+├── evaluation/         offline evaluation
+│   ├── metrics.py      nDCG, mAP, MRR, P@k, R@k
+│   ├── scoring.py      per-model scoring on held-out products
+│   ├── benchmark.py    exact vs ANN
+│   └── report.py       comparison report → runs/
+└── serving/            online serving
+    ├── engine.py       embed → ANN → re-rank; add images
+    ├── api.py          FastAPI routes + web UI
+    └── static/         fallback page
+frontend/               React + Vite + shadcn/ui web UI (see below)
+```
 
 ## Data and evaluation protocol
 
@@ -79,7 +100,7 @@ cd frontend && npm install && npm run build   # FastAPI then serves frontend/dis
 npm run dev                                    # hot-reload dev server on :5173 (proxies the API on :8000)
 ```
 
-Without a build, `/` falls back to the dependency-free page in `src/visual_search/static/`.
+Without a build, `/` falls back to the dependency-free page in `src/visual_search/serving/static/`.
 
 API:
 
@@ -88,6 +109,12 @@ curl -F file=@mug.jpg -F k=10 localhost:8000/search
 curl -F file=@mug.jpg -F box=0.2,0.1,0.7,0.8 localhost:8000/search   # crop (fractions or pixels)
 curl -F file=@new.jpg -F category=mug localhost:8000/images            # index a new image live
 ```
+
+## Deploy to Azure (container + Kubernetes)
+
+Step-by-step Portal guide (no Azure CLI): [docs/DEPLOY_AZURE.md](docs/DEPLOY_AZURE.md).
+It covers the [Dockerfile](Dockerfile), Azure Container Registry, an AKS cluster and the
+[Kubernetes manifest](deploy/k8s/visual-search.yaml).
 
 ## Train on Azure Machine Learning
 

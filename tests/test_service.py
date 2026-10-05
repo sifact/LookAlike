@@ -10,9 +10,11 @@ from PIL import Image
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
-    from visual_search import config, data, service
-    from visual_search.index import VectorIndex
-    from visual_search.model import Embedder
+    from visual_search import config
+    from visual_search.data import catalog
+    from visual_search.modeling import Embedder, embed_paths
+    from visual_search.retrieval import VectorIndex
+    from visual_search.serving import api, engine
 
     images = tmp_path / "images"
     (images / "test").mkdir(parents=True)
@@ -23,24 +25,23 @@ def client(tmp_path, monkeypatch):
         Image.new("RGB", (64, 64), tuple(int(v) for v in c)).save(images / f"test/{i}.jpg")
         rows.append({"image_id": i, "path": f"test/{i}.jpg", "item_id": str(i % 3),
                      "category": "c", "split": "test", "role": "gallery"})
-    catalog = tmp_path / "catalog.parquet"
-    pd.DataFrame(rows).to_parquet(catalog)
-    for mod in (config, data, service):
-        monkeypatch.setattr(mod, "CATALOG", catalog, raising=False)
+    catalog_file = tmp_path / "catalog.parquet"
+    pd.DataFrame(rows).to_parquet(catalog_file)
+    for mod in (config, catalog, engine, api):
+        monkeypatch.setattr(mod, "CATALOG", catalog_file, raising=False)
         monkeypatch.setattr(mod, "IMAGES", images, raising=False)
-    monkeypatch.setattr(service, "UPLOADS", images / "uploads")
-    monkeypatch.setattr(service, "UPLOADS_LOG", images / "uploads/catalog.jsonl")
-    monkeypatch.setattr(service, "BLOCKED_IDS", tmp_path / "none.txt")
+    monkeypatch.setattr(engine, "UPLOADS", images / "uploads")
+    monkeypatch.setattr(engine, "UPLOADS_LOG", images / "uploads/catalog.jsonl")
+    monkeypatch.setattr(engine, "BLOCKED_IDS", tmp_path / "none.txt")
 
     model = Embedder("resnet18.a1_in1k", pretrained=False).eval()
     ckpt = tmp_path / "tiny.pt"
     model.save(ckpt)
-    from visual_search.embed import embed_paths
     vecs = embed_paths(model, [images / r["path"] for r in rows], workers=0)
     VectorIndex.build(vecs, np.arange(12), "flat").save(tmp_path / "index", {"model": str(ckpt)})
 
     from fastapi.testclient import TestClient
-    return TestClient(service.create_app(tmp_path / "index"))
+    return TestClient(api.create_app(tmp_path / "index"))
 
 
 def _png(color):

@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from .config import IMG_SIZE
+from ..config import IMG_SIZE
 
 
 class Embedder(nn.Module):

@@ -14,7 +14,7 @@ def cmd_data(a):
 
 
 def cmd_train(a):
-    from .train import train
+    from .training import train
 
     out = train(a.mode, a.backbone, a.proj_dim, a.epochs, a.batch_size, a.lr, a.temperature,
                 a.noise, a.name, a.max_steps, a.workers, a.seed)
@@ -22,16 +22,15 @@ def cmd_train(a):
 
 
 def cmd_evaluate(a):
-    from .evaluate import run
+    from .evaluation import run
 
     print(run(a.models, a.k, a.ann))
 
 
 def cmd_index(a):
     from .data import load_catalog
-    from .embed import catalog_embeddings
-    from .index import VectorIndex
-    from .model import model_tag
+    from .modeling import catalog_embeddings, model_tag
+    from .retrieval import VectorIndex
 
     cat = load_catalog()
     vecs = catalog_embeddings(a.model, cat)
@@ -44,7 +43,7 @@ def cmd_index(a):
 def cmd_serve(a):
     import uvicorn
 
-    from .service import create_app
+    from .serving import create_app
 
     uvicorn.run(create_app(a.index), host=a.host, port=a.port)
 
