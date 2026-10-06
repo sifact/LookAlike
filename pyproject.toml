@@ -1,5 +1,5 @@
 [project]
-name = "visual-search"
+name = "lookalike"
 version = "0.1.0"
 description = "Visual search: contrastive image embeddings, ANN retrieval and re-ranking"
 readme = "README.md"
@@ -27,7 +27,7 @@ dependencies = [
 azure = ["mlflow>=2.15", "azureml-mlflow>=1.57"]
 
 [project.scripts]
-visual-search = "visual_search.cli:main"
+lookalike = "lookalike.cli:main"
 
 [dependency-groups]
 dev = ["pytest>=8", "httpx>=0.27"]

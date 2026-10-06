@@ -80,7 +80,7 @@ def download(workers: int = 16) -> None:
 def _shards(split: str) -> list:
     files = sorted((RAW / "data").glob(f"{split}-*.parquet"))
     if not files:
-        raise FileNotFoundError(f"no {split} shards in {RAW / 'data'}; run `visual-search data` first")
+        raise FileNotFoundError(f"no {split} shards in {RAW / 'data'}; run `lookalike data` first")
     return files
 
 

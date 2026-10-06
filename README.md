@@ -1,4 +1,4 @@
-# Visual search system
+# LookAlike
 
 Upload an image, or drag a box around part of one, and get the most visually similar
 catalog images, best match first. This implements Chapter 2 of *Machine Learning System
@@ -24,7 +24,7 @@ query image (+crop)─>│ preprocess -> embedder -> ANN top 3k+5 -> re-rank -> 
 ### Code layout
 
 ```
-src/visual_search/
+src/lookalike/
 ├── cli.py              command line: data, train, evaluate, index, serve
 ├── config.py           paths, device, constants
 ├── tracking.py         optional MLflow logging (active in Azure ML jobs)
@@ -76,17 +76,17 @@ uv run pytest          # metrics, loss, indexes, re-ranking, API; no dataset nee
 ## Run
 
 ```bash
-uv run visual-search data                                   # download (~3 GB, resumable) + build catalog
-uv run visual-search train --mode interactions              # same-product positives
-uv run visual-search train --mode selfsup                   # augmentation positives
-uv run visual-search train --mode interactions --noise 0.3  # 30% noisy "clicks"
+uv run lookalike data                                   # download (~3 GB, resumable) + build catalog
+uv run lookalike train --mode interactions              # same-product positives
+uv run lookalike train --mode selfsup                   # augmentation positives
+uv run lookalike train --mode interactions --noise 0.3  # 30% noisy "clicks"
 
-uv run visual-search evaluate resnet50.a1_in1k vit_small_patch14_dinov2.lvd142m \
+uv run lookalike evaluate resnet50.a1_in1k vit_small_patch14_dinov2.lvd142m \
     artifacts/models/selfsup.pt artifacts/models/interactions.pt \
     --ann artifacts/models/interactions.pt                  # -> runs/<timestamp>/eval.md
 
-uv run visual-search index --model artifacts/models/interactions.pt --kind hnsw
-uv run visual-search serve --index artifacts/indexes/<name> # http://127.0.0.1:8000
+uv run lookalike index --model artifacts/models/interactions.pt --kind hnsw
+uv run lookalike serve --index artifacts/indexes/<name> # http://127.0.0.1:8000
 ```
 
 ### Web UI
@@ -100,7 +100,7 @@ cd frontend && npm install && npm run build   # FastAPI then serves frontend/dis
 npm run dev                                    # hot-reload dev server on :5173 (proxies the API on :8000)
 ```
 
-Without a build, `/` falls back to the dependency-free page in `src/visual_search/serving/static/`.
+Without a build, `/` falls back to the dependency-free page in `src/lookalike/serving/static/`.
 
 API:
 

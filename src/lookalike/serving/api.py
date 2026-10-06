@@ -1,6 +1,6 @@
 """HTTP API and web UI on top of SearchEngine.
 
-Run with `visual-search serve --index artifacts/indexes/<name>`.
+Run with `lookalike serve --index artifacts/indexes/<name>`.
 """
 
 import io
@@ -41,7 +41,7 @@ async def _read_image(file: UploadFile):
 def create_app(index_dir: Path | None = None) -> FastAPI:
     index_dir = Path(index_dir or os.environ["VS_INDEX"])
     engine = SearchEngine(index_dir)
-    app = FastAPI(title="Visual search")
+    app = FastAPI(title="LookAlike")
     app.state.engine = engine
 
     @app.get("/health")

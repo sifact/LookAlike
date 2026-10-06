@@ -22,7 +22,7 @@ command: >-
   pip install -q torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu &&
   pip install -q -e ".[azure]" &&
   python -c "import torch; print('torch', torch.__version__, 'threads', torch.get_num_threads())" &&
-  visual-search data --per-category-train 300 --per-category-test 300 --max-queries 2000 --seed 0 &&
-  visual-search train --mode interactions --epochs 3 --batch-size 64 --lr 2e-5 --temperature 0.05 --proj-dim 256 --workers 4 --seed 0 &&
-  visual-search evaluate artifacts/models/interactions.pt &&
+  lookalike data --per-category-train 300 --per-category-test 300 --max-queries 2000 --seed 0 &&
+  lookalike train --mode interactions --epochs 3 --batch-size 64 --lr 2e-5 --temperature 0.05 --proj-dim 256 --workers 4 --seed 0 &&
+  lookalike evaluate artifacts/models/interactions.pt &&
   mkdir -p outputs && cp -r artifacts/models runs outputs/

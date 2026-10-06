@@ -37,7 +37,7 @@ The image needs the trained model, the index, the catalog and the images. This c
 them into `deploy/bundle/` and shrinks the images to 320 px thumbnails, about 830 MB in total.
 
 ```bash
-cd ~/Documents/Dev/upwork/ml/visual-search-system
+cd ~/Documents/Dev/ai-porjects/lookalike
 uv run python deploy/make_bundle.py --index artifacts/indexes/interactions_1790965435_hnsw
 ```
 

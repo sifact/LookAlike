@@ -134,7 +134,7 @@ export default function App() {
               <ScanSearch className="size-5" />
             </div>
             <div>
-              <h1 className="font-heading text-base leading-tight font-semibold">Visual Search</h1>
+              <h1 className="font-heading text-base leading-tight font-semibold">LookAlike</h1>
               <p className="text-xs text-muted-foreground">Find visually similar products from a photo or a crop</p>
             </div>
           </div>
@@ -326,7 +326,7 @@ function EmptyState({ offline, onRetry }: { offline: boolean; onRetry: () => voi
         <>
           <p className="font-medium">Can't reach the search API</p>
           <p className="max-w-sm text-sm text-muted-foreground">
-            Start it with <code className="rounded bg-muted px-1 py-0.5">uv run visual-search serve --index …</code>
+            Start it with <code className="rounded bg-muted px-1 py-0.5">uv run lookalike serve --index …</code>
           </p>
           <Button variant="outline" size="sm" onClick={onRetry}>
             <RefreshCw /> Retry

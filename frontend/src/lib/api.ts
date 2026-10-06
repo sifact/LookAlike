@@ -1,4 +1,4 @@
-// Client for the FastAPI backend (src/visual_search/service.py).
+// Client for the FastAPI backend (src/lookalike/service.py).
 // Relative URLs: proxied by Vite in dev, same origin when served by FastAPI.
 
 export type Health = {

@@ -32,4 +32,4 @@ COPY --from=ui /ui/dist ./frontend/dist
 COPY deploy/bundle ./bundle
 
 EXPOSE 8000
-CMD ["uvicorn", "visual_search.serving.api:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "lookalike.serving.api:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]

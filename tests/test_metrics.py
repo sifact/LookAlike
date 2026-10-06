@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from visual_search.evaluation import metrics as M
+from lookalike.evaluation import metrics as M
 
 
 def test_ndcg_perfect_and_reversed():

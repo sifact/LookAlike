@@ -49,7 +49,7 @@ def cmd_serve(a):
 
 
 def main():
-    p = argparse.ArgumentParser(prog="visual-search")
+    p = argparse.ArgumentParser(prog="lookalike")
     sub = p.add_subparsers(required=True)
 
     s = sub.add_parser("data", help="download Stanford Online Products and build the catalog")

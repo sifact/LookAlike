@@ -2,8 +2,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from visual_search.retrieval import Candidate, VectorIndex, rerank
-from visual_search.training import info_nce
+from lookalike.retrieval import Candidate, VectorIndex, rerank
+from lookalike.training import info_nce
 
 
 def _unit(n, d, seed=0):

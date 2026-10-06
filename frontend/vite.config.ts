@@ -3,7 +3,7 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-// Dev server proxies API calls to the FastAPI backend (visual-search serve, port 8000).
+// Dev server proxies API calls to the FastAPI backend (lookalike serve, port 8000).
 const api = 'http://127.0.0.1:8000'
 
 export default defineConfig({

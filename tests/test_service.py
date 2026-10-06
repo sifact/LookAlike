@@ -10,11 +10,11 @@ from PIL import Image
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
-    from visual_search import config
-    from visual_search.data import catalog
-    from visual_search.modeling import Embedder, embed_paths
-    from visual_search.retrieval import VectorIndex
-    from visual_search.serving import api, engine
+    from lookalike import config
+    from lookalike.data import catalog
+    from lookalike.modeling import Embedder, embed_paths
+    from lookalike.retrieval import VectorIndex
+    from lookalike.serving import api, engine
 
     images = tmp_path / "images"
     (images / "test").mkdir(parents=True)
